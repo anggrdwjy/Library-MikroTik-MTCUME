@@ -1,6 +1,9 @@
-# MTCUME - Panduan Implementasi dan Operasi
+# Panduan Implementasi dan Operasi MTCUME
 
-## Modul 1: PPP - Fondasi Manajemen Pengguna
+## Daftar Isi
+- [Modul 1 - PPP]
+
+## Modul 1: PPP - Fondasi Manajemen User
 
 ### Tujuan Implementasi
 
@@ -8,13 +11,13 @@ Membangun fondasi PPP yang digunakan oleh PPTP, L2TP, dan PPPoE. Apabila profile
 
 ### Studi Kasus
 
-ISP lokal melayani 200 pelanggan rumahan. Terdapat dua paket: Gold 10 Mbps dan Silver 5 Mbps. Setiap pelanggan hanya diizinkan untuk melakukan login dalam satu sesi. Koneksi harus diputus secara otomatis setelah 1 hari dan memaksa autentikasi ulang. TCP MSS harus disesuaikan agar penelusuran tidak terputus-putus.
+ISP lokal melayani 200 pelanggan rumahan. Terdapat dua paket: Gold 10 Mbps dan Silver 5 Mbps. Setiap pelanggan hanya diizinkan untuk melakukan login dalam satu sesi. Koneksi harus diputus secara otomatis setelah 1 hari dan memaksa autentikasi ulang. TCP MSS harus disesuaikan agar browsing tidak terputus-putus.
 
 ### Konsep Kunci
 
-- **PPP Profile:** Templat yang mengatur local-address, remote-address, rate-limit, encryption, session-timeout, TCP MSS, dan filter.
-- **PPP Secret:** Akun pengguna. Menunjuk ke profile. Dapat mengesampingkan local-address, remote-address, dan routes.
-- **IP Pool:** Rentang alamat yang dibagikan ke client PPP. Gunakan `next-pool` apabila satu pool telah habis.
+- **PPP Profile:** Template yang mengatur local-address, remote-address, rate-limit, encryption, session-timeout, TCP MSS, dan filter.
+- **PPP Secret:** Akun user. Menunjuk ke profile. Dapat mengesampingkan local-address, remote-address, dan routes.
+- **IP Pool:** Range alamat yang dibagikan ke client PPP. Gunakan `next-pool` apabila satu pool telah habis.
 
 ### Perbandingan RouterOS v6 vs v7
 
@@ -71,19 +74,19 @@ ISP lokal melayani 200 pelanggan rumahan. Terdapat dua paket: Gold 10 Mbps dan S
 #### Langkah 3 - Pembuatan PPP Secret
 
 ```routeros
-/ppp secret add name=pelanggan001 password=KataSandiKuat001 \
+/ppp secret add name=pelanggan001 password=PasswordStrong001 \
   service=any profile=profile-gold \
   comment="Gold - Jl. Merdeka 12"
 
 # Contoh user dengan IP statis dan route khusus
-/ppp secret add name=pelanggan002 password=KataSandiKuat002 \
+/ppp secret add name=pelanggan002 password=PasswordStrong002 \
   service=pppoe profile=profile-gold \
   local-address=10.10.10.1 remote-address=10.10.10.50 \
   routes="192.168.50.0/24 10.10.10.50 1" \
   comment="Gold - IP Statis - Kantor Cabang"
 
 # User untuk teknisi / admin
-/ppp secret add name=teknisi01 password=KataSandiKuat003 \
+/ppp secret add name=teknisi01 password=PasswordStrong003 \
   service=any profile=profile-default \
   comment="Teknisi Lapangan"
 ```
@@ -102,18 +105,17 @@ ISP lokal melayani 200 pelanggan rumahan. Terdapat dua paket: Gold 10 Mbps dan S
 /ppp profile print
 /ppp secret print
 /ppp active print
-# Periksa siapa yang sedang daring, IP, uptime, dan profile yang digunakan
+# Periksa siapa yang sedang online, IP, uptime, dan profile yang digunakan
 /ppp active print where name=pelanggan001
 ```
 
 ### Operasi dan Troubleshooting
 
-- **Pengguna tidak dapat melakukan login, padahal password benar:** Periksa `service` di secret. Jika `service=pppoe` tetapi client dial melalui PPTP, login ditolak. Periksa juga `only-one=yes` - jika sesi lama masih menggantung, terputus dulu.
+- **User tidak dapat melakukan login, padahal password benar:** Periksa `service` di secret. Jika `service=pppoe` tetapi client dial melalui PPTP, login ditolak. Periksa juga `only-one=yes` - jika sesi lama masih menggantung, terputus dulu.
 - **Pelanggan dapat IP salah:** Periksa `remote-address` di profile dan `pool` yang dirujuk. Apabila secret memiliki `remote-address` statis, itu akan mengalahkan pool.
-- **Penelusuran lambat / situs tertentu tidak terbuka:** Biasanya MSS. Pastikan `change-tcp-mss=yes` di profile. Di PPPoE, MTU/MRU 1480 atau 1492 sering lebih aman daripterdapat 1500.
+- **Browsing lambat / situs tertentu tidak terbuka:** Biasanya MSS. Pastikan `change-tcp-mss=yes` di profile. Di PPPoE, MTU/MRU 1480 atau 1492 sering lebih aman daripada 1500.
 - **Sesi tidak terputus:** Periksa `session-timeout` dan `idle-timeout` di profile. Untuk memutuskan paksa: `/ppp active remove [find name=pelanggan001]`
 - **Operasi harian:** Pantaulah `/ppp active print count-only`, `/ip pool used print`, dan log PPP di `/log print where topics~"ppp"`.
-
 
 ## Modul 2: PPTP dan L2TP - Tunnel PPP Antar Site
 
@@ -140,13 +142,13 @@ Satu cabang di kota lain harus terhubung ke kantor pusat untuk akses server inte
 | Aspek | RouterOS v6 (6.49.x) | RouterOS v7 (7.x) |
 | --- | --- | --- |
 | PPTP Server / Client | Tersedia penuh | Tersedia, tetapi dianggap legacy dan tidak direkomendasikan |
-| L2TP Server / Client | Tersedia, `use-ipsec` pterdapat server | Sama, tetapi integrasi IPsec lebih ketat |
-| L2TP + IPsec Secret | `ipsec-secret` pterdapat server L2TP | Sama |
+| L2TP Server / Client | Tersedia, `use-ipsec` pada server | Sama, tetapi integrasi IPsec lebih ketat |
+| L2TP + IPsec Secret | `ipsec-secret` pada server L2TP | Sama |
 | Authentication | pap, chap, mschap1, mschap2 | Sama, mschap2 direkomendasikan untuk PPTP/L2TP |
 | NAT-Traversal | Otomatis jika IPsec digunakan | Sama, lebih stabil di v7 |
 | Rekomendasi | PPTP masih sering ditemui | Untuk baru, pilih L2TP/IPsec atau WireGuard / IPsec murni |
 
-### Konfigurasi - PPTP Server pterdapat R-CORE
+### Konfigurasi - PPTP Server pada R-CORE
 
 ```routeros
 # Profile khusus PPTP
@@ -164,18 +166,18 @@ Satu cabang di kota lain harus terhubung ke kantor pusat untuk akses server inte
   keepalive-timeout=30
 
 # Secret untuk teknisi / cabang PPTP
-/ppp secret add name=cabang-pptp password=KataSandiKuatPPTP \
+/ppp secret add name=cabang-pptp password=PasswordStrongPPTP \
   service=pptp profile=profile-pptp
 
 # Static interface (opsional, agar mudah di-firewall dan di-queue)
 /interface pptp-server add name=pptp-cabang user=cabang-pptp
 ```
 
-### Konfigurasi - PPTP Client pterdapat R-BRANCH
+### Konfigurasi - PPTP Client pada R-BRANCH
 
 ```routeros
 /interface pptp-client add name=pptp-to-core \
-  connect-to=203.0.113.2 user=cabang-pptp password=KataSandiKuatPPTP \
+  connect-to=203.0.113.2 user=cabang-pptp password=PasswordStrongPPTP \
   profile=profile-pptp \
   add-default-route=no dial-on-demand=no \
   allow=mschap2 disabled=no
@@ -183,12 +185,12 @@ Satu cabang di kota lain harus terhubung ke kantor pusat untuk akses server inte
 # Route ke LAN pusat melalui tunnel
 /ip route add dst-address=192.168.88.0/24 gateway=pptp-to-core distance=1 comment="Melalui PPTP Core"
 
-# Route pterdapat R-CORE balik ke LAN cabang
-# Jalankan pterdapat R-CORE:
+# Route pada R-CORE balik ke LAN cabang
+# Jalankan pada R-CORE:
 /ip route add dst-address=192.168.10.0/24 gateway=10.0.0.10 distance=1 comment="Melalui PPTP Branch"
 ```
 
-### Konfigurasi - L2TP/IPsec Server pterdapat R-CORE (Rekomendasi Produksi)
+### Konfigurasi - L2TP/IPsec Server pada R-CORE (Rekomendasi Produksi)
 
 ```routeros
 /ppp profile add name=profile-l2tp \
@@ -201,20 +203,20 @@ Satu cabang di kota lain harus terhubung ke kantor pusat untuk akses server inte
   default-profile=profile-l2tp \
   authentication=mschap2 \
   use-ipsec=required \
-  ipsec-secret=SecretIpsecKuat123 \
+  ipsec-secret=IpsecSecretStrong123 \
   keepalive-timeout=30
 
-/ppp secret add name=cabang-l2tp password=KataSandiKuatL2TP \
+/ppp secret add name=cabang-l2tp password=PasswordStrongL2TP \
   service=l2tp profile=profile-l2tp
 ```
 
-### Konfigurasi - L2TP/IPsec Client pterdapat R-BRANCH
+### Konfigurasi - L2TP/IPsec Client pada R-BRANCH
 
 ```routeros
 /interface l2tp-client add name=l2tp-to-core \
-  connect-to=203.0.113.2 user=cabang-l2tp password=KataSandiKuatL2TP \
+  connect-to=203.0.113.2 user=cabang-l2tp password=PasswordStrongL2TP \
   profile=profile-l2tp \
-  use-ipsec=yes ipsec-secret=SecretIpsecKuat123 \
+  use-ipsec=yes ipsec-secret=IpsecSecretStrong123 \
   add-default-route=no dial-on-demand=no disabled=no
 
 /ip route add dst-address=192.168.88.0/24 gateway=l2tp-to-core distance=1 comment="Melalui L2TP Core"
@@ -234,12 +236,11 @@ Satu cabang di kota lain harus terhubung ke kantor pusat untuk akses server inte
 
 ### Operasi dan Troubleshooting
 
-- **L2TP tidak tersambung, PPTP tersambung:** Biasanya IPsec blocking. Periksa firewall UDP 500, 4500, dan protokol IPsec (ESP) pterdapat kedua sisi. Di L2TP/IPsec, pastikan `ipsec-secret` sama persis.
-- **Tunnel tersambung tetapi tidak dapat ping LAN:** Periksa route pterdapat kedua sisi. Tunnel PPP hanya memberi route ke IP tunnel, bukan ke LAN. Tambahkan route statis ke subnet LAN lawan.
+- **L2TP tidak tersambung, PPTP tersambung:** Biasanya IPsec blocking. Periksa firewall UDP 500, 4500, dan protokol IPsec (ESP) pada kedua sisi. Di L2TP/IPsec, pastikan `ipsec-secret` sama persis.
+- **Tunnel tersambung tetapi tidak dapat ping LAN:** Periksa route pada kedua sisi. Tunnel PPP hanya memberi route ke IP tunnel, bukan ke LAN. Tambahkan route statis ke subnet LAN lawan.
 - **Tunnel sering terputus:** Periksa `keepalive-timeout`, kualitas link, dan NAT timeout. Untuk cabang permanen, set `dial-on-demand=no` dan tambahkan Netwatch untuk auto-reconnect.
 - **PPTP tersambung tetapi lambat:** Periksa MTU/MRU. Turunkan ke 1400-1450 untuk PPTP.
 - **Keamanan:** Jangan membuka PPTP (TCP 1723) ke internet tanpa firewall whitelist. Batasi hanya dari IP cabang yang dikenal.
-
 
 ## Modul 3: PPPoE - Layanan Broadband ISP
 
@@ -249,11 +250,11 @@ Membangun PPPoE Server yang aman, scalable, dan mudah dioperasikan untuk pelangg
 
 ### Studi Kasus
 
-ISP melayani 500 pelanggan FTTH melalui OLT. Setiap OLT terhubung melalui VLAN ke R-CORE. Pelanggan dial PPPoE dari ONT / router rumah. Terdapat paket Gold 20 Mbps, Silver 10 Mbps, dan Bronze 5 Mbps. Perlu ECMP untuk load balancing ke dua upstream. Server PPPoE tidak diizinkan untuk memiliki alamat IP pterdapat interface PPPoE agar tidak dapat dipindai secara langsung.
+ISP melayani 500 pelanggan FTTH melalui OLT. Setiap OLT terhubung melalui VLAN ke R-CORE. Pelanggan dial PPPoE dari ONT / router rumah. Terdapat paket Gold 20 Mbps, Silver 10 Mbps, dan Bronze 5 Mbps. Perlu ECMP untuk load balancing ke dua upstream. Server PPPoE tidak diizinkan untuk memiliki alamat IP pada interface PPPoE agar tidak dapat dipindai secara langsung.
 
 ### Konsep Kunci
 
-- **PPPoE Server:** Mendengarkan pterdapat interface (biasanya VLAN). Satu server per VLAN / per OLT.
+- **PPPoE Server:** Mendengarkan pada interface (biasanya VLAN). Satu server per VLAN / per OLT.
 - **PPPoE Client:** Router pelanggan yang dial ke server.
 - **Service-Name:** Nama layanan yang diiklankan server. Client dapat memilih service-name tertentu.
 - **One-Session-Per-Host:** Mencegah satu MAC dial banyak sesi.
@@ -271,7 +272,7 @@ ISP melayani 500 pelanggan FTTH melalui OLT. Setiap OLT terhubung melalui VLAN k
 | RADIUS | Integrasi melalui `/ppp aaa` | Sama, User Manager v5 lebih stabil di v7 |
 | Catatan | Sangat umum di ISP lama | Direkomendasikan untuk instalasi baru |
 
-### Konfigurasi - PPPoE Server pterdapat R-CORE
+### Konfigurasi - PPPoE Server pada R-CORE
 
 #### Langkah 1 - VLAN per OLT
 
@@ -329,11 +330,11 @@ ISP melayani 500 pelanggan FTTH melalui OLT. Setiap OLT terhubung melalui VLAN k
 #### Langkah 4 - Secret Pelanggan PPPoE
 
 ```routeros
-/ppp secret add name=pelanggan101 password=KataSandiPelanggan101 \
+/ppp secret add name=pelanggan101 password=PasswordCustomer101 \
   service=pppoe profile=profile-pppoe-gold \
   comment="PPPoE Gold - OLT1 - Pelanggan 101"
 
-/ppp secret add name=pelanggan102 password=KataSandiPelanggan102 \
+/ppp secret add name=pelanggan102 password=PasswordCustomer102 \
   service=pppoe profile=profile-pppoe-gold \
   comment="PPPoE Gold - OLT1 - Pelanggan 102"
 ```
@@ -362,7 +363,7 @@ ISP melayani 500 pelanggan FTTH melalui OLT. Setiap OLT terhubung melalui VLAN k
 
 ```routeros
 /interface pppoe-client add name=pppoe-out \
-  interface=ether1 user=pelanggan101 password=KataSandiPelanggan101 \
+  interface=ether1 user=pelanggan101 password=PasswordCustomer101 \
   profile=default service-name=ISP-PPPoE \
   add-default-route=yes use-peer-dns=yes \
   dial-on-demand=no disabled=no
@@ -390,8 +391,7 @@ ISP melayani 500 pelanggan FTTH melalui OLT. Setiap OLT terhubung melalui VLAN k
 - **Pelanggan sering terputus:** Periksa `session-timeout`, kualitas fiber, dan `keepalive`. Periksa log: `/log print where topics~"pppoe"`
 - **Satu pelanggan dapat dial berkali-kali:** Pastikan `one-session-per-host=yes` di PPPoE Server dan `only-one=yes` di profile.
 - **ECMP tidak seimbang:** ECMP RouterOS membagi berdasarkan connection, bukan per paket. Untuk pembagian lebih merata, kombinasikan dengan PCC di mangle.
-- **Keamanan:** Jangan memberikan alamat IP pterdapat interface VLAN PPPoE. Batasi akses WinBox / API hanya dari VLAN manajemen.
-
+- **Keamanan:** Jangan memberikan alamat IP pada interface VLAN PPPoE. Batasi akses WinBox / API hanya dari VLAN manajemen.
 
 ## Modul 4: Bridging - Memperpanjang Layer 2 Melalui Tunnel
 
@@ -409,7 +409,7 @@ Terdapat dua gedung: Gedung A (pusat) dan Gedung B (cabang). CCTV di Gedung B ha
 - **VPLS:** Virtual Private LAN Service. Diperlukan MPLS / LDP. Lebih scalable untuk banyak site.
 - **BCP:** Bridge Control Protocol. Mem-bridge interface PPP langsung. Cocok untuk L2TP yang sudah ada.
 - **Multilink / MLPPP:** Menggabungkan beberapa link PPP menjadi satu link logis yang lebih besar dan redundan.
-- **MRRU:** Max Received Reconstructed Unit. Harus sama pterdapat kedua sisi untuk multilink.
+- **MRRU:** Max Received Reconstructed Unit. Harus sama pada kedua sisi untuk multilink.
 
 ### Perbandingan RouterOS v6 vs v7
 
@@ -424,7 +424,7 @@ Terdapat dua gedung: Gedung A (pusat) dan Gedung B (cabang). CCTV di Gedung B ha
 
 ### Konfigurasi A - L2TP + EoIP (Paling Umum, Tanpa MPLS)
 
-#### Pterdapat R-CORE
+#### Pada R-CORE
 
 ```routeros
 # 1. L2TP Tunnel sudah dibuat di Modul 2, pastikan aktif
@@ -442,7 +442,7 @@ Terdapat dua gedung: Gedung A (pusat) dan Gedung B (cabang). CCTV di Gedung B ha
 /ip address add address=192.168.20.1/24 interface=bridge-cctv network=192.168.20.0
 ```
 
-#### Pterdapat R-BRANCH
+#### Pada R-BRANCH
 
 ```routeros
 /interface eoip add name=eoip-core \
@@ -470,7 +470,7 @@ Terdapat dua gedung: Gedung A (pusat) dan Gedung B (cabang). CCTV di Gedung B ha
 /mpls ldp set enabled=yes lsr-id=10.0.0.2 transport-address=10.0.0.2
 /mpls ldp interface add interface=ether1
 
-# VPLS pterdapat R-CORE:
+# VPLS pada R-CORE:
 /interface vpls add name=vpls-cabang \
   remote-peer=10.0.0.2 vpls-id=100:10 \
   cisco-style=yes cisco-style-id=100 \
@@ -480,13 +480,13 @@ Terdapat dua gedung: Gedung A (pusat) dan Gedung B (cabang). CCTV di Gedung B ha
 /interface bridge port add bridge=bridge-vpls interface=vpls-cabang
 /interface bridge port add bridge=bridge-vpls interface=ether5
 
-# VPLS pterdapat R-BRANCH: mirror, ubah remote-peer ke 10.0.0.1
+# VPLS pada R-BRANCH: mirror, ubah remote-peer ke 10.0.0.1
 ```
 
 ### Konfigurasi C - L2TP + BCP (Bridge PPP Langsung)
 
 ```routeros
-# Pterdapat R-CORE: Buatlah bridge dan arahkan PPP Profile ke bridge tersebut
+# Pada R-CORE: Buatlah bridge dan arahkan PPP Profile ke bridge tersebut
 /interface bridge add name=bridge-bcp
 /interface bridge port add bridge=bridge-bcp interface=ether5
 
@@ -498,10 +498,10 @@ Terdapat dua gedung: Gedung A (pusat) dan Gedung B (cabang). CCTV di Gedung B ha
 # Aktifkan BCP di L2TP Server
 /interface l2tp-server server set use-bcp=yes default-profile=profile-bcp
 
-# Pterdapat R-BRANCH: L2TP Client dengan BCP
+# Pada R-BRANCH: L2TP Client dengan BCP
 /interface l2tp-client add name=l2tp-bcp \
-  connect-to=203.0.113.2 user=cabang-l2tp password=KataSandiKuatL2TP \
-  profile=profile-bcp use-ipsec=yes ipsec-secret=SecretIpsecKuat123 \
+  connect-to=203.0.113.2 user=cabang-l2tp password=PasswordStrongL2TP \
+  profile=profile-bcp use-ipsec=yes ipsec-secret=IpsecSecretStrong123 \
   add-default-route=no disabled=no
 ```
 
@@ -514,7 +514,7 @@ Terdapat dua gedung: Gedung A (pusat) dan Gedung B (cabang). CCTV di Gedung B ha
 # Di Client PPPoE dengan dua interface fisik
 /interface pppoe-client add name=pppoe-mlppp \
   interface=ether1,ether2 \
-  user=pelanggan101 password=KataSandiPelanggan101 \
+  user=pelanggan101 password=PasswordCustomer101 \
   profile=profile-pppoe-gold \
   mrru=1500 max-mtu=1500 max-mru=1500 \
   add-default-route=yes disabled=no
@@ -540,22 +540,21 @@ Terdapat dua gedung: Gedung A (pusat) dan Gedung B (cabang). CCTV di Gedung B ha
 
 ### Operasi dan Troubleshooting
 
-- **EoIP tersambung tetapi tidak dapat ping:** Periksa `tunnel-id` harus sama pterdapat kedua sisi, dan `remote-address` harus IP yang dapat dijangkau. Periksa firewall: EoIP gunakan protokol GRE (IP 47). Izinkan melalui firewall jika diblokir.
+- **EoIP tersambung tetapi tidak dapat ping:** Periksa `tunnel-id` harus sama pada kedua sisi, dan `remote-address` harus IP yang dapat dijangkau. Periksa firewall: EoIP gunakan protokol GRE (IP 47). Izinkan melalui firewall jika diblokir.
 - **Loop / broadcast storm:** Jangan masukkan dua interface yang sama ke bridge tanpa `protocol-mode` atau loop protection. Untuk EoIP, set `protocol-mode=none` di bridge CCTV jika tidak terdapat loop, atau `rstp` jika terdapat redundansi.
 - **VPLS tidak up:** Periksa LDP neighbor: `/mpls ldp neighbor print`. Periksa `vpls-id` dan `remote-peer` harus mirror. Periksa MTU MPLS minimal 1508.
 - **BCP tidak bridge:** Periksa profile PPP `bridge` sudah diisi dan L2TP server `use-bcp=yes`. BCP hanya jalan jika kedua sisi setuju.
-- **MLPPP tidak menggabung:** Periksa `mrru` sama pterdapat server dan client, dan MTU konsisten. Apabila satu link putus, MLPPP harus tetap berjalan dengan kecepatan satu link.
-
+- **MLPPP tidak menggabung:** Periksa `mrru` sama pada server dan client, dan MTU konsisten. Apabila satu link putus, MLPPP harus tetap berjalan dengan kecepatan satu link.
 
 ## Modul 5: IPsec - Tunnel Terenkripsi Antar Router
 
 ### Tujuan Implementasi
 
-Membangun VPN site-to-site yang terenkripsi dan aman, termasuk saat kedua sisi berterdapat di balik NAT.
+Membangun VPN site-to-site yang terenkripsi dan aman, termasuk saat kedua sisi berada di balik NAT.
 
 ### Studi Kasus
 
-Kantor pusat (192.168.88.0/24) dan cabang (192.168.10.0/24) harus saling akses server internal. Koneksi melewati internet publik. Terdapat NAT pterdapat kedua sisi. Diperlukan IPsec dengan IKEv2, AES-256, SHA-256, PFS, dan DPD agar tunnel otomatis pulih jika putus.
+Kantor pusat (192.168.88.0/24) dan cabang (192.168.10.0/24) harus saling akses server internal. Koneksi melewati internet publik. Terdapat NAT pada kedua sisi. Diperlukan IPsec dengan IKEv2, AES-256, SHA-256, PFS, dan DPD agar tunnel otomatis pulih jika putus.
 
 ### Konsep Kunci
 
@@ -582,7 +581,7 @@ Kantor pusat (192.168.88.0/24) dan cabang (192.168.10.0/24) harus saling akses s
 
 ### Konfigurasi - RouterOS v7 (Rekomendasi)
 
-#### Pterdapat R-CORE (v7)
+#### Pada R-CORE (v7)
 
 ```routeros
 # 1. Profile IPsec
@@ -600,7 +599,7 @@ Kantor pusat (192.168.88.0/24) dan cabang (192.168.10.0/24) harus saling akses s
 
 # 3. Identity (Pre-Shared-Key)
 /ip ipsec identity add peer=peer-branch \
-  auth-method=pre-shared-key secret=SecretIpsecSangatKuat123 \
+  auth-method=pre-shared-key secret=IpsecSecretStrong123 \
   generate-policy=port-strict
 
 # 4. Proposal
@@ -624,7 +623,7 @@ Kantor pusat (192.168.88.0/24) dan cabang (192.168.10.0/24) harus saling akses s
 /ip firewall filter add chain=input protocol=ipsec-esp action=accept comment="IPsec ESP" place-before=0
 ```
 
-#### Pterdapat R-BRANCH (v7) - Mirror
+#### Pada R-BRANCH (v7) - Mirror
 
 ```routeros
 /ip ipsec profile add name=profile-ike2 \
@@ -638,7 +637,7 @@ Kantor pusat (192.168.88.0/24) dan cabang (192.168.10.0/24) harus saling akses s
   exchange-mode=ike2 send-initial-contact=yes
 
 /ip ipsec identity add peer=peer-core \
-  auth-method=pre-shared-key secret=SecretIpsecSangatKuat123 \
+  auth-method=pre-shared-key secret=IpsecSecretStrong123 \
   generate-policy=port-strict
 
 /ip ipsec proposal add name=proposal-ike2 \
@@ -663,7 +662,7 @@ Kantor pusat (192.168.88.0/24) dan cabang (192.168.10.0/24) harus saling akses s
 ```routeros
 # v6: Peer langsung berisi banyak parameter, tidak terdapat profile terpisah
 /ip ipsec peer add address=203.0.113.10/32 \
-  auth-method=pre-shared-key secret=SecretIpsecSangatKuat123 \
+  auth-method=pre-shared-key secret=IpsecSecretStrong123 \
   exchange-mode=ike2 generate-policy=port-strict \
   send-initial-contact=yes nat-traversal=yes \
   dpd-interval=2m dpd-maximum-failures=5 \
@@ -696,35 +695,34 @@ Kantor pusat (192.168.88.0/24) dan cabang (192.168.10.0/24) harus saling akses s
 
 ### Operasi dan Troubleshooting
 
-- **Peer tidak terbentuk, log "no proposal chosen":** Proposal tidak cocok. Samakan `enc-algorithm`, `hash-algorithm`, dan `dh-group` pterdapat kedua sisi.
+- **Peer tidak terbentuk, log "no proposal chosen":** Proposal tidak cocok. Samakan `enc-algorithm`, `hash-algorithm`, dan `dh-group` pada kedua sisi.
 - **Peer terbentuk tetapi policy tidak aktif / SA 0:** Periksa policy `src-address` dan `dst-address` harus mirror. Periksa NAT bypass harus di atas rule masquerade.
 - **IPsec jalan tetapi lambat:** Periksa PFS dan lifetime. PFS modp2048 lebih berat tetapi lebih aman. Apabila router kecil, pertimbangkan modp1024 atau AES-128 untuk site kecil.
 - **Tunnel putus setelah idle:** Periksa DPD. Pastikan firewall tidak memblokir UDP 4500 setelah idle. Gunakan `dpd-interval=2m`.
 - **SA terhenti setelah ubah konfigurasi:** Flush SA: `/ip ipsec installed-sa flush` lalu ping lagi untuk memicu pembentukan SA baru.
 - **Operasi:** Pantaulah `/ip ipsec active-peers print`, `/ip ipsec installed-sa print`, dan log IPsec. Untuk failover, buatlah dua peer ke dua IP publik cabang apabila tersedia.
 
-
-## Modul 6: Hotspot - Manajemen Pengguna Akses WiFi dan LAN
+## Modul 6: Hotspot - Manajemen User Akses WiFi dan LAN
 
 ### Tujuan Implementasi
 
-Membangun portal login untuk pengguna WiFi / LAN, dengan voucher, limit kecepatan, kuota, dan pemantauan pengguna aktif. Cocok untuk cafe, sekolah, hotel, area publik, dan kantor.
+Membangun portal login untuk user WiFi / LAN, dengan voucher, limit kecepatan, kuota, dan pemantauan user aktif. Cocok untuk cafe, sekolah, hotel, area publik, dan kantor.
 
 ### Studi Kasus
 
-Sebuah sekolah dan area publik diperlukan WiFi untuk 300 pengguna bersamaan. Terdapat tiga tipe pengguna:
+Sebuah sekolah dan area publik diperlukan WiFi untuk 300 user bersamaan. Terdapat tiga tipe user:
 
 - **Voucher harian** untuk tamu, kecepatan 5 Mbps, masa aktif 2 jam.
 - **Siswa** login dengan username, kecepatan 10 Mbps, kuota 2 GB per hari.
 - **Perangkat bypass** seperti printer dan CCTV, tanpa melakukan login, melalui IP Binding.
 
-Terdapat walled garden untuk domain sekolah agar dapat diakses tanpa melakukan login. Login harus melalui HTTPS dan Cookie agar pengguna tidak login berulang.
+Terdapat walled garden untuk domain sekolah agar dapat diakses tanpa melakukan login. Login harus melalui HTTPS dan Cookie agar user tidak login berulang.
 
 ### Konsep Kunci
 
 - **Hotspot Profile:** Mengatur hotspot-address, dns-name, login-by, html-directory, dan use-radius.
 - **Hotspot User Profile:** Template untuk rate-limit, shared-users, session-timeout, keepalive, dan packet-mark.
-- **Hotspot User:** Akun voucher atau pengguna tetap.
+- **Hotspot User:** Akun voucher atau user tetap.
 - **Host Table vs Active Table:** Host adalah perangkat yang terdeteksi, Active adalah yang sudah login.
 - **Walled Garden:** Domain / IP yang dapat diakses tanpa melakukan login.
 - **IP Binding:** Mem-bypass perangkat tertentu dari Hotspot.
@@ -862,15 +860,14 @@ Terdapat walled garden untuk domain sekolah agar dapat diakses tanpa melakukan l
 
 ### Operasi dan Troubleshooting
 
-- **Pengguna tidak diarahkan ke halaman login:** Periksa DNS. Hotspot diperlukan DNS yang dapat resolve `dns-name`. Periksa firewall: Hotspot diperlukan port 80 dan 443 terbuka ke hotspot-address. Periksa `address-pool` tidak habis.
+- **User tidak diarahkan ke halaman login:** Periksa DNS. Hotspot memerlukan DNS yang dapat resolve `dns-name`. Periksa firewall: Hotspot memerlukan port 80 dan 443 terbuka ke hotspot-address. Periksa `address-pool` tidak habis.
 - **Login berhasil tetapi tidak terdapat internet:** Periksa NAT, firewall forward, dan `hotspot-address`. Periksa juga `use-radius` - jika RADIUS down dan `use-radius=yes`, login lokal mungkin tetap berjalan tergantung setting, tetapi lebih aman periksa RADIUS.
-- **Pengguna sering logout sendiri:** Periksa `keepalive-timeout` dan `idle-timeout`. Apabila AP sering roaming, naikkan `keepalive-timeout` ke 10m.
-- **Voucher habis tetapi masih dapat melakukan login:** Periksa `limit-uptime` dan `limit-bytes`. Jalankan `/ip hotspot pengguna print` untuk melihat `uptime` dan `bytes`. Gunakan scheduler reset counter.
-- **Walled Garden tidak berjalan:** Periksa urutan walled garden dan DNS. Walled garden berbasis dst-host diperlukan DNS resolve. Untuk IP, gunakan `walled-garden ip`.
-- **Operasi harian:** Pantaulah `/ip hotspot active print count-only`, `/ip hotspot host print count-only`, dan jumlah voucher terpakai. Buatlah laporan mingguan: pengguna aktif pterdapat jam sibuk, voucher terlaris, dan perangkat bypass.
+- **User sering logout sendiri:** Periksa `keepalive-timeout` dan `idle-timeout`. Apabila AP sering roaming, naikkan `keepalive-timeout` ke 10m.
+- **Voucher habis tetapi masih dapat melakukan login:** Periksa `limit-uptime` dan `limit-bytes`. Jalankan `/ip hotspot user print` untuk melihat `uptime` dan `bytes`. Gunakan scheduler reset counter.
+- **Walled Garden tidak berjalan:** Periksa urutan walled garden dan DNS. Walled garden berbasis dst-host memerlukan resolusi DNS. Untuk IP, gunakan `walled-garden ip`.
+- **Operasi harian:** Pantaulah `/ip hotspot active print count-only`, `/ip hotspot host print count-only`, dan jumlah voucher terpakai. Buatlah laporan mingguan: user aktif pada jam sibuk, voucher terlaris, dan perangkat bypass.
 
-
-## Modul 7: RADIUS - Manajemen Pengguna Terpusat
+## Modul 7: RADIUS - Manajemen User Terpusat
 
 ### Tujuan Implementasi
 
@@ -878,12 +875,12 @@ Memindahkan manajemen user dari router lokal (PPP Secret, Hotspot User) ke serve
 
 ### Studi Kasus
 
-ISP memiliki 3 NAS: R-CORE (PPPoE), R-HOTSPOT (Hotspot), dan R-BRANCH (L2TP). Seluruh pengguna harus dikelola dari satu User Manager di 10.99.99.10. Pengguna PPPoE dan Hotspot dapat gunakan akun yang sama. Admin dapat terputus user dari server tanpa melakukan login ke tiap router. Terdapat profile Gold dan Silver yang berlaku di semua NAS.
+ISP memiliki 3 NAS: R-CORE (PPPoE), R-HOTSPOT (Hotspot), dan R-BRANCH (L2TP). Seluruh user harus dikelola dari satu User Manager di 10.99.99.10. User PPPoE dan Hotspot dapat gunakan akun yang sama. Admin dapat terputus user dari server tanpa melakukan login ke tiap router. Terdapat profile Gold dan Silver yang berlaku di semua NAS.
 
 ### Konsep Kunci
 
 - **RADIUS Client (NAS):** Router yang meminta autentikasi ke server RADIUS.
-- **RADIUS Server:** Server yang memverifikasi pengguna, memberi profile, dan mencatat accounting.
+- **RADIUS Server:** Server yang memverifikasi user, memberi profile, dan mencatat accounting.
 - **User Manager:** Aplikasi RADIUS bawaan MikroTik. Di v6 namanya User Manager v4, di v7 namanya User Manager v5.
 - **RADIUS Incoming / CoA:** Port 3799 untuk terputus atau change-of-authorization dari server ke NAS.
 - **AAA:** Authentication, Authorization, Accounting. Authentication periksa password, Authorization periksa profile / rate-limit, Accounting catat durasi dan bytes.
@@ -908,11 +905,11 @@ ISP memiliki 3 NAS: R-CORE (PPPoE), R-HOTSPOT (Hotspot), dan R-BRANCH (L2TP). Se
 #### Langkah 1 - Install dan Aktifkan User Manager
 
 ```routeros
-# Di server User Manager (CHR atau RB yang japterdapat server):
+# Di server User Manager (CHR atau RB yang jadi server):
 # Pastikan package user-manager sudah terinstall dan enabled
 /system package print where name~"user-manager"
 
-# Pembuatan database dan pengguna admin pertama (melalui CLI v7)
+# Pembuatan database dan user admin pertama (melalui CLI v7)
 /user-manager user add username=admin-um password=AdminUmKuat123 \
   comment="Admin User Manager"
 
@@ -930,7 +927,7 @@ ISP memiliki 3 NAS: R-CORE (PPPoE), R-HOTSPOT (Hotspot), dan R-BRANCH (L2TP). Se
   comment="NAS L2TP Branch"
 ```
 
-#### Langkah 2 - Profile dan Limitation pterdapat User Manager
+#### Langkah 2 - Profile dan Limitation pada User Manager
 
 ```routeros
 # Di v7, profile dan limitation dibuat melalui CLI / Web UI
@@ -945,14 +942,14 @@ ISP memiliki 3 NAS: R-CORE (PPPoE), R-HOTSPOT (Hotspot), dan R-BRANCH (L2TP). Se
   comment="Limit Gold"
 
 # User
-/user-manager user add username=pelanggan101 password=KataSandiPelanggan101 \
+/user-manager user add username=pelanggan101 password=PasswordCustomer101 \
   profile=profile-gold-um \
   comment="PPPoE + Hotspot - Gold"
 ```
 
 > **Catatan v6:** Di RouterOS v6, sintaksnya adalah `/tool user-manager ...`. Contoh: `/tool user-manager router add ...`, `/tool user-manager user add ...`, `/tool user-manager user profile add ...`. Konsepnya sama, hanya path CLI yang berbeda.
 
-### Konfigurasi - RADIUS Client pterdapat NAS (R-CORE, R-HOTSPOT, R-BRANCH)
+### Konfigurasi - RADIUS Client pada NAS (R-CORE, R-HOTSPOT, R-BRANCH)
 
 ```routeros
 # Di setiap NAS, tambahkan RADIUS Client
@@ -1006,27 +1003,26 @@ ISP memiliki 3 NAS: R-CORE (PPPoE), R-HOTSPOT (Hotspot), dan R-BRANCH (L2TP). Se
 /user-manager session print
 # Lihat sesi aktif, uptime, dan bytes
 
-# Test login PPPoE / Hotspot dengan pengguna dari User Manager
+# Test login PPPoE / Hotspot dengan user dari User Manager
 /ppp active print where name=pelanggan101
 /ip hotspot active print where user=pelanggan101
 
 # Terputus paksa dari server (CoA / RADIUS Incoming)
 # melalui User Manager Web UI: pilih session -> Terputus
-# melalui CLI pterdapat NAS jika perlu:
+# melalui CLI pada NAS jika perlu:
 /ppp active remove [find name=pelanggan101]
 ```
 
 ### Operasi dan Troubleshooting
 
-- **Login gagal, log "RADIUS timeout":** Periksa konektivitas NAS ke server RADIUS: `/ping 10.99.99.10`. Periksa firewall UDP 1812, 1813, dan 3799. Periksa `secret` sama persis pterdapat NAS dan pterdapat User Manager router.
-- **Login berhasil tetapi profile salah:** Periksa profile pterdapat User Manager. Apabila NAS memiliki profile lokal dengan nama sama, RADIUS dapat tertimpa. Pastikan `default-profile` di `/ppp aaa` tidak mengalahkan profile RADIUS.
+- **Login gagal, log "RADIUS timeout":** Periksa konektivitas NAS ke server RADIUS: `/ping 10.99.99.10`. Periksa firewall UDP 1812, 1813, dan 3799. Periksa `secret` sama persis pada NAS dan pada User Manager router.
+- **Login berhasil tetapi profile salah:** Periksa profile pada User Manager. Apabila NAS memiliki profile lokal dengan nama sama, RADIUS dapat tertimpa. Pastikan `default-profile` di `/ppp aaa` tidak mengalahkan profile RADIUS.
 - **Accounting tidak tercatat:** Periksa `accounting=yes` di `/ppp aaa` dan `interim-update`. Periksa port accounting 1813 terbuka. Periksa database User Manager tidak penuh.
-- **RADIUS Incoming tidak berjalan:** Periksa `/radius incoming print` - harus `accept=yes`. Periksa firewall UDP 3799 pterdapat NAS. Periksa User Manager dapat reach NAS.
-- **User Manager berjalan lambat setelah ribuan pengguna:** Di v7, pisahkan User Manager ke CHR khusus, jangan gabung dengan PPPoE Server yang sibuk. Backup database rutin dan bersihkan session lama.
-- **Operasi harian:** Pantaulah `/user-manager session print count-only`, `/radius monitor`, dan log RADIUS. Buatlah cadangan User Manager setiap hari: `/user-manager database save` atau export melalui Web UI.
+- **RADIUS Incoming tidak berjalan:** Periksa `/radius incoming print` - harus `accept=yes`. Periksa firewall UDP 3799 pada NAS. Periksa User Manager dapat reach NAS.
+- **User Manager berjalan lambat setelah ribuan user:** Di v7, pisahkan User Manager ke CHR khusus, jangan gabung dengan PPPoE Server yang sibuk. Backup database rutin dan bersihkan session lama.
+- **Operasi harian:** Pantaulah `/user-manager session print count-only`, `/radius monitor`, dan log RADIUS. Buatlah backup User Manager setiap hari: `/user-manager database save` atau export melalui Web UI.
 - **Keamanan:** Jangan membuka port RADIUS 1812/1813/3799 ke internet. Hanya dari IP NAS yang dikenal. Gunakan secret yang panjang dan ubah berkala.
-
-
+  
 
 ## Lampiran A: Perintah Verifikasi Cepat
 
@@ -1075,7 +1071,6 @@ ISP memiliki 3 NAS: R-CORE (PPPoE), R-HOTSPOT (Hotspot), dan R-BRANCH (L2TP). Se
 /tool user-manager database save name=um-backup-v6
 ```
 
-
 ## Lampiran B: Troubleshooting Umum Antar Modul
 
 | Gejala | Kemungkinan Penyebab | Periksa |
@@ -1088,3 +1083,4 @@ ISP memiliki 3 NAS: R-CORE (PPPoE), R-HOTSPOT (Hotspot), dan R-BRANCH (L2TP). Se
 | Hotspot tidak redirect | DNS / pool habis / firewall | `/ip hotspot print`, `/ip pool print` |
 | RADIUS timeout | Secret beda, port diblokir | `/radius print`, `/ping 10.99.99.10` |
 | User Manager berjalan lambat | Database penuh, server gabung dengan PPPoE | Pisahkan server, bersihkan session lama |
+
