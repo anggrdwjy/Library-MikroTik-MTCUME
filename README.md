@@ -1,15 +1,15 @@
 # MTCUME - Panduan Implementasi dan Operasi
 
 ## Daftar Isi
-- [Modul 1: PPP - Fondasi Manajemen User](https://github.com/anggrdwjy/Library-MikroTik-MTCUME/tree/main#modul-1-ppp---fondasi-manajemen-user)
-- [Modul 2: PPTP dan L2TP - Tunnel PPP Antar Site](https://github.com/anggrdwjy/Library-MikroTik-MTCUME/tree/main#modul-2-pptp-dan-l2tp---tunnel-ppp-antar-site)
-- [Modul 3: PPPoE - Layanan Broadband ISP](https://github.com/anggrdwjy/Library-MikroTik-MTCUME/tree/main#modul-3-pppoe---layanan-broadband-isp)
-- [Modul 4: Bridging - Memperpanjang Layer 2 Melalui Tunnel](https://github.com/anggrdwjy/Library-MikroTik-MTCUME/tree/main#modul-4-bridging---memperpanjang-layer-2-melalui-tunnel)
-- [Modul 5: IPsec - Tunnel Terenkripsi Antar Router](https://github.com/anggrdwjy/Library-MikroTik-MTCUME/tree/main#modul-5-ipsec---tunnel-terenkripsi-antar-router)
-- [Modul 6: Hotspot - Manajemen User Akses WiFi dan LAN](https://github.com/anggrdwjy/Library-MikroTik-MTCUME/tree/main#modul-6-hotspot---manajemen-user-akses-wifi-dan-lan)
-- [Modul 7: RADIUS - Manajemen User Terpusat](https://github.com/anggrdwjy/Library-MikroTik-MTCUME/tree/main#modul-7-radius---manajemen-user-terpusat)
+- [Modul 1. PPP - Fondasi Manajemen User]( #modul-1-ppp---fondasi-manajemen-user)
+- [Modul 2. PPTP dan L2TP - Tunnel PPP Antar Site]( #modul-2-pptp-dan-l2tp---tunnel-ppp-antar-site)
+- [Modul 3. PPPoE - Layanan Broadband ISP]( #modul-3-pppoe---layanan-broadband-isp)
+- [Modul 4. Bridging - Memperpanjang Layer 2 Melalui Tunnel]( #modul-4-bridging---memperpanjang-layer-2-melalui-tunnel)
+- [Modul 5. IPsec - Tunnel Terenkripsi Antar Router]( #modul-5-ipsec---tunnel-terenkripsi-antar-router)
+- [Modul 6. Hotspot - Manajemen User Akses WiFi dan LAN]( #modul-6-hotspot---manajemen-user-akses-wifi-dan-lan)
+- [Modul 7. RADIUS - Manajemen User Terpusat]( #modul-7-radius---manajemen-user-terpusat)
 
-## Modul 1: PPP - Fondasi Manajemen User
+## Modul 1. PPP - Fondasi Manajemen User
 
 ### Tujuan Implementasi
 
@@ -123,7 +123,7 @@ ISP lokal melayani 200 pelanggan rumahan. Terdapat dua paket: Gold 10 Mbps dan S
 - **Sesi tidak terputus:** Periksa `session-timeout` dan `idle-timeout` di profile. Untuk memutuskan paksa: `/ppp active remove [find name=pelanggan001]`
 - **Operasi harian:** Pantaulah `/ppp active print count-only`, `/ip pool used print`, dan log PPP di `/log print where topics~"ppp"`.
 
-## Modul 2: PPTP dan L2TP - Tunnel PPP Antar Site
+## Modul 2. PPTP dan L2TP - Tunnel PPP Antar Site
 
 ### Tujuan Implementasi
 
@@ -248,7 +248,7 @@ Satu cabang di kota lain harus terhubung ke kantor pusat untuk akses server inte
 - **PPTP tersambung tetapi lambat:** Periksa MTU/MRU. Turunkan ke 1400-1450 untuk PPTP.
 - **Keamanan:** Jangan membuka PPTP (TCP 1723) ke internet tanpa firewall whitelist. Batasi hanya dari IP cabang yang dikenal.
 
-## Modul 3: PPPoE - Layanan Broadband ISP
+## Modul 3. PPPoE - Layanan Broadband ISP
 
 ### Tujuan Implementasi
 
@@ -399,7 +399,7 @@ ISP melayani 500 pelanggan FTTH melalui OLT. Setiap OLT terhubung melalui VLAN k
 - **ECMP tidak seimbang:** ECMP RouterOS membagi berdasarkan connection, bukan per paket. Untuk pembagian lebih merata, kombinasikan dengan PCC di mangle.
 - **Keamanan:** Jangan memberikan alamat IP pada interface VLAN PPPoE. Batasi akses WinBox / API hanya dari VLAN manajemen.
 
-## Modul 4: Bridging - Memperpanjang Layer 2 Melalui Tunnel
+## Modul 4. Bridging - Memperpanjang Layer 2 Melalui Tunnel
 
 ### Tujuan Implementasi
 
@@ -552,7 +552,7 @@ Terdapat dua gedung: Gedung A (pusat) dan Gedung B (cabang). CCTV di Gedung B ha
 - **BCP tidak bridge:** Periksa profile PPP `bridge` sudah diisi dan L2TP server `use-bcp=yes`. BCP hanya jalan jika kedua sisi setuju.
 - **MLPPP tidak menggabung:** Periksa `mrru` sama pada server dan client, dan MTU konsisten. Apabila satu link putus, MLPPP harus tetap berjalan dengan kecepatan satu link.
 
-## Modul 5: IPsec - Tunnel Terenkripsi Antar Router
+## Modul 5. IPsec - Tunnel Terenkripsi Antar Router
 
 ### Tujuan Implementasi
 
@@ -708,7 +708,7 @@ Kantor pusat (192.168.88.0/24) dan cabang (192.168.10.0/24) harus saling akses s
 - **SA terhenti setelah ubah konfigurasi:** Flush SA: `/ip ipsec installed-sa flush` lalu ping lagi untuk memicu pembentukan SA baru.
 - **Operasi:** Pantaulah `/ip ipsec active-peers print`, `/ip ipsec installed-sa print`, dan log IPsec. Untuk failover, buatlah dua peer ke dua IP publik cabang apabila tersedia.
 
-## Modul 6: Hotspot - Manajemen User Akses WiFi dan LAN
+## Modul 6. Hotspot - Manajemen User Akses WiFi dan LAN
 
 ### Tujuan Implementasi
 
@@ -873,7 +873,7 @@ Terdapat walled garden untuk domain sekolah agar dapat diakses tanpa melakukan l
 - **Walled Garden tidak berjalan:** Periksa urutan walled garden dan DNS. Walled garden berbasis dst-host memerlukan resolusi DNS. Untuk IP, gunakan `walled-garden ip`.
 - **Operasi harian:** Pantaulah `/ip hotspot active print count-only`, `/ip hotspot host print count-only`, dan jumlah voucher terpakai. Buatlah laporan mingguan: user aktif pada jam sibuk, voucher terlaris, dan perangkat bypass.
 
-## Modul 7: RADIUS - Manajemen User Terpusat
+## Modul 7. RADIUS - Manajemen User Terpusat
 
 ### Tujuan Implementasi
 
